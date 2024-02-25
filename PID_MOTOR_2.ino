@@ -1,4 +1,4 @@
-  #include <EEPROM.h> //EEPROM 
+#include<EEPROM.h>
 #define ENCA 2 
 #define ENCB 3 
 
@@ -7,12 +7,11 @@
 #define ENA_A 8
 #define ENA_B 9
 
-#define CPR 9360  //Counts Per Revolution
-#define FACTOR 6.5    //Factor which is used to convert position from degree to PPR 
+#define CPR 93132  //Counts Per Revolution
+#define FACTOR 87776*2  //FACTOR which is used to convert position from pulses to cm
 #define JOYSTICK A0
-// #define SW 7
 
-int deg=0;
+long deg;
 long pos;
 
 long prevT = 0;
@@ -36,10 +35,8 @@ void setup() {
   digitalWrite(ENA_A,HIGH);
   digitalWrite(ENA_B,HIGH);
 
-  pos=map(EEPROM.read(0),0,255,0,360) * FACTOR; //Read the previous position of the motor shaft from the EEPROM memory so that the reference position do not change (Absolute Servo)
-  Serial.println("     ");
-  Serial.print("CURRENT POSITION =  ");
-  Serial.println(pos/FACTOR);  
+  pos=map(EEPROM.read(0),127,255,0,526656); //Read the previous position of the motor shaft from the EEPROM memory so that the reference position do not change (Absolute Servo)
+
 
   pinMode(ENCA,INPUT);
   pinMode(ENCB,INPUT);
@@ -47,7 +44,8 @@ void setup() {
 }
 
 void loop() {
-  /*
+
+  /* 
   if(analogRead(JOYSTICK)>800){
     Serial.println("CW");
     deg+=10;    
@@ -61,7 +59,8 @@ void loop() {
   if(deg<0)
     deg=0;
   */
-  PID(180);
+
+  PID(FACTOR);
  
 
 }
@@ -91,8 +90,8 @@ void readEncoder(){
   }
 }
 
-int PID(int deg){
-  float target = deg*FACTOR;  
+int PID(long deg){
+  long target = deg;  
   
 
   // time difference
@@ -101,7 +100,7 @@ int PID(int deg){
   prevT = currT;
 
   // error
-  int e = pos-target;
+  long e = pos-target;
 
   // derivative
   float dedt = (e-eprev)/(deltaT);
@@ -133,14 +132,13 @@ int PID(int deg){
   eprev = e;
   //Serial.print("Target: ");
 
-  Serial.print(target/FACTOR);
+  Serial.print(target);
   Serial.print(" ");
   //Serial.print("Position: ");
-  Serial.print(pos/FACTOR);
+  Serial.print(pos);
   Serial.println();
-  EEPROM.update(0, map(pos/FACTOR,0,360,0,255));
-  //Serial.print("EEPROM STORED=  ");
-  //Serial.println(map(EEPROM.read(0),0,255,0,360));
-  //Serial.println("DONE......................");
+  //Storing current position in eeprom
+  EEPROM.update(0, map(pos,0,526656,127,255));
+
 
 }
